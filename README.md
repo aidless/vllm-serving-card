@@ -62,6 +62,32 @@ python3 parse_results.py          # 出表 + results/card.json
   首 token 延迟是这份硬件上唯一明显恶化的指标。
 - 电费 0.441 → 0.043 ¥/1M 输出 token（**10.3×**）；c=4 的 0.122 是中间档。
 
+## 配置敏感性：enforce-eager vs CUDA graph（2026-11-09 增测）
+
+同一硬件、同基准参数（48 条、256in/128out、ignore-eos、seed 42、warmup 4），
+唯一差别是去掉 `--enforce-eager`（eager 基线；推荐配置 = 去掉该参数启用 CUDA graph，见下文配置敏感性）（vLLM 0.33 默认 `FULL_AND_PIECEWISE` CUDA graph +
+inductor 编译）：
+
+| 并发 | eager 输出 tok/s | graph 输出 tok/s | 加速 | eager TPOT p99 | graph TPOT p99 | eager E2E p99 | graph E2E p99 | eager ¥/1M out | graph ¥/1M out |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 19.99 | **80.19** | 4.0× | 65.06 ms | **12.18 ms** | 8383 ms | **1667 ms** | 0.441 | **0.096** |
+| 4 | 71.71 | **242.95** | 3.4× | 79.43 ms | **15.31 ms** | 10357 ms | **2126 ms** | 0.122 | **0.027** |
+| 16 | 261.41 | **534.82** | 2.1× | 61.78 ms | **28.02 ms** | 8129 ms | **4293 ms** | 0.043 | **0.016** |
+
+（c=1 与 c=4、c=16 的 graph 档各测一次，c=4/c=16 复测一次，两次吞吐 247.04/242.95、
+546.46/534.82 tok/s，波动 <5%。graph 档成本窗口功率 40.0–51.5 W，口径与 eager 相同。）
+
+**代价是 KV cache**：graph 捕获吃掉约 1.3 GiB——KV cache 从 15,232 tokens（7.44x 并发）
+掉到 **8,304 tokens（4.05x）**。本基准 384 tokens/请求不受影响，但长上下文会先撞 KV。
+
+**边界实测**：`--gpu-memory-utilization 0.95` + CUDA graph 在 6GB 卡上 **OOM**
+（capture 时要 1.80 GiB、只剩 1.75 GiB；vLLM 的 graph-aware 显存预算把 0.95 折算成
+等效 0.8482 仍不够）。0.90 + graph 是这张卡的上限配置。另：vLLM 0.33 的
+`VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS` 默认开启，日志会显式给出等效利用率。
+
+**结论**：6GB 卡上 serve Qwen3-4B-AWQ，CUDA graph 是第一杠杆——吞吐 ×2.1–4.0、
+电费 ÷2.7–4.6，代价是 KV 减半。eager 只在显存极度受限（要给 KV 让路）时才值得。
+
 ## 成本口径（唯一假设，别外推）
 
 `电费 ¥/1M 输出 tok = (窗口内平均板功率 W × 1e6/输出吞吐 秒) / 3.6e6 kWh × ¥0.6/kWh`。
@@ -78,7 +104,7 @@ python3 parse_results.py          # 出表 + results/card.json
 ## 适用范围与已知限制
 
 - 单卡 6GB、**单轮扫描**（每档一次，没有重复运行 → 没给置信区间），数字是这台机器这一次读数。
-- `--enforce-eager`：没开 CUDA graph，absolute 吞吐偏保守；`--ignore-eos` 强制每条恰好 128
+- `--enforce-eager`（eager 基线；推荐配置 = 去掉该参数启用 CUDA graph，见下文配置敏感性）：没开 CUDA graph，absolute 吞吐偏保守；`--ignore-eos` 强制每条恰好 128
   输出 token，真实业务变长输出会改变 prefill/decode 比例；random 输入使 prefix cache 命中率很低。
 - `--max-model-len 2048`：长上下文场景 KV cache 只有 15,232 tokens，并发余量会缩水，别把 c=16 外推到长文档。
 - TTFT/TPOT/E2E 都是**客户端端到端**（含网络与排队），不是引擎内部计时。
