@@ -108,6 +108,18 @@ TPOT p99 降 4–5×，代价是 KV 减半。eager 只在显存极度受限（�
   与各档 duration 307.4 / 85.7 / 23.5 s 对齐。
 - `card.json` 同时存了 `power_idle_w`、窗口内 `samples`、`util_mean_pct`，可复核。
 
+## prefix-cache 观测发现（2026-11-10，上游 issue）
+
+0.33.0rc3 + FLASH_ATTN + **LBNHC KV cache layout** 下，`enable_prefix_caching=True`
+但字节相同的连续 prompt 也永不命中：`prefix_cache_queries_total` 增长、
+`prefix_cache_hits_total` 恒 0（chat 与 raw completions 皆然）。
+已排除 `FullAttentionSpec.prefix_cacheable`（默认 True）与 fine-grained
+禁用告警（kv_cache_utils.py:796 未触发）两条路径。复现与排查记录见上游
+[vllm#66786](https://github.com/vllm-project/vllm/issues/66786)。
+对本卡读数的影响：本卡基准是 `--ignore-eos` 随机定长输入，本就不依赖
+prefix cache，吞吐数字不受此 bug 影响；但**共享长系统提示词的真实服务**
+在 0.33.0rc3 上预期拿不到 prefill 复用收益。
+
 ## 适用范围与已知限制
 
 - 单卡 6GB、**单轮扫描**（每档一次，没有重复运行 → 没给置信区间），数字是这台机器这一次读数。
