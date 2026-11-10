@@ -117,17 +117,17 @@ c=1 与 c=4（含 CUDA graph 档）均判 **INTERACTIVE**，c=16 判 STREAM_OK�
 门槛可用 `--ttft-p99-ms/--tpot-p99-ms` 调整；缺载体的档判 UNKNOWN 不编档，
 card.json 缺 rows 直接 exit 2（fail-closed）。
 
-## prefix-cache 观测发现（2026-11-10，上游 issue）
+## prefix-cache 观测（2026-11-10，定位后撤销）
 
-0.33.0rc3 + FLASH_ATTN + **LBNHC KV cache layout** 下，`enable_prefix_caching=True`
-但字节相同的连续 prompt 也永不命中：`prefix_cache_queries_total` 增长、
-`prefix_cache_hits_total` 恒 0（chat 与 raw completions 皆然）。
-已排除 `FullAttentionSpec.prefix_cacheable`（默认 True）与 fine-grained
-禁用告警（kv_cache_utils.py:796 未触发）两条路径。复现与排查记录见上游
-[vllm#66786](https://github.com/vllm-project/vllm/issues/66786)。
-对本卡读数的影响：本卡基准是 `--ignore-eos` 随机定长输入，本就不依赖
-prefix cache，吞吐数字不受此 bug 影响；但**共享长系统提示词的真实服务**
-在 0.33.0rc3 上预期拿不到 prefill 复用收益。
+曾报告「相同 prompt 永不命中 prefix cache」并报上游
+[vllm#66786](https://github.com/vllm-project/vllm/issues/66786)——
+**已自答关闭（误报）**。根因：复现 prompt 只有 13 tokens，vLLM 只哈希
+完整 16-token block（`request_block_hasher` 的 "We only hash full blocks"），
+不足一个 block 的 prompt 在 lookup 时 `block_hashes` 为空、永远不命中——
+block 粒度缓存的设计行为，与 LBNHC layout 无关。同一服务换 ~72 token
+相同 prompt ×2，第二次即命中 64 tokens（89%）。
+对本卡结论无影响：`--ignore-eos` 随机定长输入本就不依赖 prefix cache；
+真实服务若共享长系统提示词（>1 block），命中正常。
 
 ## 适用范围与已知限制
 
