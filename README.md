@@ -108,6 +108,15 @@ TPOT p99 降 4–5×，代价是 KV 减半。eager 只在显存极度受限（�
   与各档 duration 307.4 / 85.7 / 23.5 s 对齐。
 - `card.json` 同时存了 `power_idle_w`、窗口内 `samples`、`util_mean_pct`，可复核。
 
+## SLO 自动推导（analyze_slo.py，2026-11-10）
+
+「交互式并发上限=4」不再手推——`python3 analyze_slo.py --card results/card.json`
+按显式门槛（默认 TTFT p99≤500ms 且 TPOT p99≤100ms）逐档分类：
+c=1 与 c=4（含 CUDA graph 档）均判 **INTERACTIVE**，c=16 判 STREAM_OK，
+**交互式并发上限 = 4**，判定依据逐档落盘 `results/slo.json`。
+门槛可用 `--ttft-p99-ms/--tpot-p99-ms` 调整；缺载体的档判 UNKNOWN 不编档，
+card.json 缺 rows 直接 exit 2（fail-closed）。
+
 ## prefix-cache 观测发现（2026-11-10，上游 issue）
 
 0.33.0rc3 + FLASH_ATTN + **LBNHC KV cache layout** 下，`enable_prefix_caching=True`
