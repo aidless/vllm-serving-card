@@ -1,0 +1,3 @@
+硬件/服务快照
+NVIDIA GeForce RTX 3060 Laptop GPU, 595.99.02, 6144 MiB
+vllm 0.33.0 torch 2.14.0+cu130
