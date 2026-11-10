@@ -1,8 +1,8 @@
 {
   "generated_from": [
-    "bench-c1.json",
-    "bench-c4.json",
-    "bench-c16.json"
+    "bench-cg-c1.json",
+    "bench-cg-c4.json",
+    "bench-cg-c16.json"
   ],
   "electricity_cny_per_kwh": 0.6,
   "power_window": "bench date - duration .. bench date（排除采样器启动时的空闲段）",
@@ -31,7 +31,8 @@
       "power_idle_w": 37.37,
       "samples": 308,
       "mem_max_mib": 5422.0,
-      "util_mean_pct": 26.2
+      "util_mean_pct": 26.2,
+      "variant": "eager"
     },
     {
       "concurrency": 4,
@@ -57,7 +58,8 @@
       "power_idle_w": 28.44,
       "samples": 85,
       "mem_max_mib": 5496.0,
-      "util_mean_pct": 30.7
+      "util_mean_pct": 30.7,
+      "variant": "eager"
     },
     {
       "concurrency": 16,
@@ -83,7 +85,92 @@
       "power_idle_w": 28.83,
       "samples": 23,
       "mem_max_mib": 5389.0,
-      "util_mean_pct": 46.0
+      "util_mean_pct": 46.0,
+      "variant": "eager"
+    },
+    {
+      "concurrency": 1,
+      "completed": 48,
+      "failed": 0,
+      "duration_s": 76.62,
+      "req_per_s": 0.627,
+      "output_tok_per_s": 80.19,
+      "total_tok_per_s": 240.58,
+      "ttft_mean_ms": 114.3,
+      "ttft_p50_ms": 114.7,
+      "ttft_p99_ms": 132.4,
+      "tpot_mean_ms": 11.67,
+      "tpot_p99_ms": 12.18,
+      "e2el_mean_ms": 1595.9,
+      "e2el_p99_ms": 1667.3,
+      "gpu_min_per_1m_out_tok": null,
+      "kwh_per_1m_out_tok": null,
+      "cny_per_1m_out_tok": null,
+      "power_mean_w": null,
+      "power_p50_w": null,
+      "power_max_w": null,
+      "power_idle_w": null,
+      "samples": null,
+      "mem_max_mib": null,
+      "util_mean_pct": null,
+      "power_evidence": null,
+      "variant": "graph"
+    },
+    {
+      "concurrency": 4,
+      "completed": 48,
+      "failed": 0,
+      "duration_s": 25.29,
+      "req_per_s": 1.898,
+      "output_tok_per_s": 242.95,
+      "total_tok_per_s": 728.86,
+      "ttft_mean_ms": 232.4,
+      "ttft_p50_ms": 219.2,
+      "ttft_p99_ms": 389.4,
+      "tpot_mean_ms": 14.74,
+      "tpot_p99_ms": 15.54,
+      "e2el_mean_ms": null,
+      "e2el_p99_ms": null,
+      "gpu_min_per_1m_out_tok": null,
+      "kwh_per_1m_out_tok": null,
+      "cny_per_1m_out_tok": null,
+      "power_mean_w": null,
+      "power_p50_w": null,
+      "power_max_w": null,
+      "power_idle_w": null,
+      "samples": null,
+      "mem_max_mib": null,
+      "util_mean_pct": null,
+      "power_evidence": null,
+      "variant": "graph"
+    },
+    {
+      "concurrency": 16,
+      "completed": 48,
+      "failed": 0,
+      "duration_s": 11.49,
+      "req_per_s": 4.178,
+      "output_tok_per_s": 534.82,
+      "total_tok_per_s": 1604.45,
+      "ttft_mean_ms": 1138.1,
+      "ttft_p50_ms": 899.5,
+      "ttft_p99_ms": 1591.6,
+      "tpot_mean_ms": 21.13,
+      "tpot_p99_ms": 29.15,
+      "e2el_mean_ms": null,
+      "e2el_p99_ms": null,
+      "gpu_min_per_1m_out_tok": null,
+      "kwh_per_1m_out_tok": null,
+      "cny_per_1m_out_tok": null,
+      "power_mean_w": null,
+      "power_p50_w": null,
+      "power_max_w": null,
+      "power_idle_w": null,
+      "samples": null,
+      "mem_max_mib": null,
+      "util_mean_pct": null,
+      "power_evidence": null,
+      "variant": "graph"
     }
   ]
 }

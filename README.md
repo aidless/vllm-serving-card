@@ -70,9 +70,15 @@ inductor 编译）：
 
 | 并发 | eager 输出 tok/s | graph 输出 tok/s | 加速 | eager TPOT p99 | graph TPOT p99 | eager E2E p99 | graph E2E p99 | eager ¥/1M out | graph ¥/1M out |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 19.99 | **80.19** | 4.0× | 65.06 ms | **12.18 ms** | 8383 ms | **1667 ms** | 0.441 | **0.096** |
-| 4 | 71.71 | **242.95** | 3.4× | 79.43 ms | **15.31 ms** | 10357 ms | **2126 ms** | 0.122 | **0.027** |
-| 16 | 261.41 | **534.82** | 2.1× | 61.78 ms | **28.02 ms** | 8129 ms | **4293 ms** | 0.043 | **0.016** |
+| 1 | 19.99 | **80.19** | 4.0× | 65.06 ms | **12.18 ms** | 8383 ms | **1667 ms** | 0.441 | —¹ |
+| 4 | 71.71 | **242.95** | 3.4× | 79.43 ms | **15.54 ms** | 10357 ms | —² | 0.122 | —¹ |
+| 16 | 261.41 | **534.82** | 2.1× | 61.78 ms | **29.15 ms** | 8129 ms | —² | 0.043 | —¹ |
+
+¹ graph 档功率采样只存在 /tmp、未随仓库落盘（2026-11-10 复核发现，违反本卡片
+  「数字必有落盘载体」纪律，原 0.096/0.027/0.016 无载体已撤）。吞吐 ×2.1–4.0 意味着
+  每 1M 输出 token 的 GPU 占用时间至少降同倍数；功率未落盘，成本不报数。
+² `bench-cg-c4/c16.json` 落盘时未含 e2el 字段（`--percentile-metrics` 未带 e2el），
+  载体没有就不报。c=1 的 1667 ms 有载体（bench-cg-c1.json）。
 
 （c=1 与 c=4、c=16 的 graph 档各测一次，c=4/c=16 复测一次，两次吞吐 247.04/242.95、
 546.46/534.82 tok/s，波动 <5%。graph 档成本窗口功率 40.0–51.5 W，口径与 eager 相同。）
@@ -86,7 +92,8 @@ inductor 编译）：
 `VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS` 默认开启，日志会显式给出等效利用率。
 
 **结论**：6GB 卡上 serve Qwen3-4B-AWQ，CUDA graph 是第一杠杆——吞吐 ×2.1–4.0、
-电费 ÷2.7–4.6，代价是 KV 减半。eager 只在显存极度受限（要给 KV 让路）时才值得。
+TPOT p99 降 4–5×，代价是 KV 减半。eager 只在显存极度受限（要给 KV 让路）时才值得。
+（graph 电费本可按吞吐比同降，但功率证据未落盘，卡片纪律是不报无载体数字。）
 
 ## 成本口径（唯一假设，别外推）
 
@@ -127,10 +134,12 @@ vllm-serving-card/
 └── results/
     ├── environment.txt    # GPU / vllm / torch 版本
     ├── models.json        # /v1/models 快照
-    ├── bench-c{1,4,16}.json   # vllm bench 原始结果（含 p50/p95/p99 全套）
-    ├── bench-c{1,4,16}.log    # 原始终端输出
-    ├── power-c{1,4,16}.csv    # 1 Hz 功率/显存/利用率采样
-    └── card.json          # 本表所有数字的结构化副本
+    ├── bench-c{1,4,16}.json       # eager 档 vllm bench 原始结果（p50/p95/p99 全套）
+    ├── bench-cg-c{1,4,16}.json    # graph 档原始结果（c4/c16 无 e2el 字段，见脚注 ²）
+    ├── bench-cg95-c16.json        # util 0.95 + graph OOM 记录（无有效指标，仅留证）
+    ├── bench-c{1,4,16}.log        # 原始终端输出
+    ├── power-c{1,4,16}.csv        # 1 Hz 功率/显存/利用率采样（仅 eager 档）
+    └── card.json                  # 本表所有数字的结构化副本（graph 成本=null）
 ```
 
 服务日志在本机 `/tmp/vllm-serve.log`（KV cache、模型加载之类的事实来自这里）。

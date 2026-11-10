@@ -1,0 +1,37 @@
+name: bench-lint
+
+# GPU 基准本身不在 CI 里跑（needs GPU）；这里只校验数字管线：
+# parse_results.py 的自检（GREEN fixture + 三类 RED 阻断）+ card.json 结构完整性。
+on:
+  push:
+    branches: [main]
+    paths: [parse_results.py, results/card.json, .github/workflows/bench-lint.yml]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: parse_results selftest（7 项，含缺字段/全零 P99 阻断）
+        run: python3 parse_results.py --selftest
+      - name: card.json 结构校验（eager 行必须有成本，graph 行成本允许 null）
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          card = json.load(open("results/card.json"))
+          rows = card["rows"]
+          assert len(rows) == 6, f"期望 6 行（eager×3 + graph×3），得到 {len(rows)}"
+          eager = [r for r in rows if r["variant"] == "eager"]
+          graph = [r for r in rows if r["variant"] == "graph"]
+          assert len(eager) == 3 and len(graph) == 3
+          for r in eager:
+              assert isinstance(r["cny_per_1m_out_tok"], float), f"eager-{r['concurrency']} 成本必须是实测数字"
+          for r in graph:
+              assert r["cny_per_1m_out_tok"] is None, f"graph-{r['concurrency']} 功率证据未落盘，成本必须是 null"
+          print("card.json 结构 OK：eager 有成本 / graph 成本=null")
+          EOF
