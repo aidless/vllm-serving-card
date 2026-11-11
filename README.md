@@ -1,9 +1,12 @@
 # vLLM 单卡服务实测卡片（Qwen3-4B-AWQ / RTX 3060 Laptop 6GB）
 
-一句话结论：**把并发从 1 提到 16，输出吞吐 19.99 → 261.41 tok/s（13.1×），
-每 token 电费 ¥0.441 → ¥0.043 / 1M 输出 token（10.3× 便宜），
-而 TPOT p99 反而从 65.06 ms 降到 61.78 ms；代价是 TTFT p99 从 211.8 ms 涨到 1796.0 ms。
-所以交互式 SLO 的并发上限定在 4（TTFT p99 481.2 ms），批处理/离线才吃 16 档。**
+一句话结论：**这张卡有两个杠杆。第一杠杆是并发：1→16 档输出吞吐 19.99 → 261.41 tok/s
+（13.1×），每 token 电费 ¥0.441 → ¥0.043 / 1M 输出（10.3× 便宜），代价 TTFT p99
+211.8 → 1796.0 ms。第二杠杆是 CUDA graph（eager 基线上再去掉 `--enforce-eager`）：
+同样的 c=1/4/16 档吞吐再 ×4.0/×3.4/×2.1（c=16 达 534.82 tok/s），TPOT p99
+65.06 → 12.18 ms；代价是 KV cache 15,232 → 8,304 tokens（并发余量 7.44x → 4.05x），
+且 graph 档功率证据未落盘、电费列留空（见配置敏感性节与脚注 ¹）。
+交互式 SLO 的并发上限定在 4（TTFT p99 481.2 ms，graph 档更优），批处理/离线才吃 16 档。**
 
 日期：2026-11-09。所有数字从 `results/` 原始文件重算，命令 `python3 parse_results.py`。
 
@@ -81,7 +84,8 @@ inductor 编译）：
   载体没有就不报。c=1 的 1667 ms 有载体（bench-cg-c1.json）。
 
 （c=1 与 c=4、c=16 的 graph 档各测一次，c=4/c=16 复测一次，两次吞吐 247.04/242.95、
-546.46/534.82 tok/s，波动 <5%。graph 档成本窗口功率 40.0–51.5 W，口径与 eager 相同。）
+546.46/534.82 tok/s，波动 <5%。graph 档功率采样未落盘，成本列留空——口径与 eager 相同，
+但卡片纪律是不报无载体数字。）
 
 **代价是 KV cache**：graph 捕获吃掉约 1.3 GiB——KV cache 从 15,232 tokens（7.44x 并发）
 掉到 **8,304 tokens（4.05x）**。本基准 384 tokens/请求不受影响，但长上下文会先撞 KV。
@@ -105,7 +109,9 @@ TPOT p99 降 4–5×，代价是 KV 减半。eager 只在显存极度受限（�
   那段是导入/编译空闲态（约 28 W）；直接对整份 CSV 求均值会把 c=16 档平均功率
   从 67.57 W 稀释到 45.28 W，成本被低估约 1/3。`parse_results.py` 用 bench 结果里的
   `date - duration .. date` 把请求窗口切出来再求均值，窗口内采样数 308 / 85 / 23 条，
-  与各档 duration 307.4 / 85.7 / 23.5 s 对齐。
+  与各档 duration 307.4 / 85.7 / 23.5 s 对齐。**样本量要如实看**：c=16 档窗口只有
+  23 个 1 Hz 样本，其成本均值的不确定性显著高于 c=1（308 个样本）档——短窗口均值
+  当量级参考，别当精确定价引用。
 - `card.json` 同时存了 `power_idle_w`、窗口内 `samples`、`util_mean_pct`，可复核。
 
 ## SLO 自动推导（analyze_slo.py，2026-11-10）
@@ -132,6 +138,9 @@ block 粒度缓存的设计行为，与 LBNHC layout 无关。同一服务换 ~7
 ## 适用范围与已知限制
 
 - 单卡 6GB、**单轮扫描**（每档一次，没有重复运行 → 没给置信区间），数字是这台机器这一次读数。
+  **跨次波动已量到 ±14.2%**：同脚本同 seed 复测 c=16 得 298.52 tok/s（原 261.41），
+  见 [docs/prediction-vs-measurement.md](docs/prediction-vs-measurement.md)（先写预测→再跑→偏差机制）。
+  绝对数值只能当量级参考；同一次 run 内的比值（13.1× 等）分子分母同源，不受影响。
 - `--enforce-eager`（eager 基线；推荐配置 = 去掉该参数启用 CUDA graph，见下文配置敏感性）：没开 CUDA graph，absolute 吞吐偏保守；`--ignore-eos` 强制每条恰好 128
   输出 token，真实业务变长输出会改变 prefill/decode 比例；random 输入使 prefix cache 命中率很低。
 - `--max-model-len 2048`：长上下文场景 KV cache 只有 15,232 tokens，并发余量会缩水，别把 c=16 外推到长文档。
@@ -152,14 +161,18 @@ vllm-serving-card/
 ├── README.md              # 本卡片
 ├── bench_tiers.sh         # 三档基准 + 功率采样（可重跑）
 ├── parse_results.py       # 原始 JSON/CSV → 本表 + card.json（缺字段直接退出，不猜）
+├── docs/
+│   ├── prediction-vs-measurement.md  # 先写预测再跑：c=8/c=16 十格对照 + 偏差机制
+│   └── interview-walkthrough.md      # 15 分钟讲解路径
 └── results/
     ├── environment.txt    # GPU / vllm / torch 版本
     ├── models.json        # /v1/models 快照
     ├── bench-c{1,4,16}.json       # eager 档 vllm bench 原始结果（p50/p95/p99 全套）
+    ├── bench-c{8,16}.json         # 预测闭环复测（c=16 两次读数差 14.2% 的载体）
     ├── bench-cg-c{1,4,16}.json    # graph 档原始结果（c4/c16 无 e2el 字段，见脚注 ²）
     ├── bench-cg95-c16.json        # util 0.95 + graph OOM 记录（无有效指标，仅留证）
-    ├── bench-c{1,4,16}.log        # 原始终端输出
-    ├── power-c{1,4,16}.csv        # 1 Hz 功率/显存/利用率采样（仅 eager 档）
+    ├── bench-c{1,4,8,16}.log      # 原始终端输出
+    ├── power-c{1,4,8,16}.csv      # 1 Hz 功率/显存/利用率采样（仅 eager 档）
     └── card.json                  # 本表所有数字的结构化副本（graph 成本=null）
 ```
 
