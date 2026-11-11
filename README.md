@@ -168,11 +168,12 @@ vllm-serving-card/
     ├── environment.txt    # GPU / vllm / torch 版本
     ├── models.json        # /v1/models 快照
     ├── bench-c{1,4,16}.json       # eager 档 vllm bench 原始结果（p50/p95/p99 全套）
-    ├── bench-c{8,16}.json         # 预测闭环复测（c=16 两次读数差 14.2% 的载体）
+    ├── bench-c8.json              # 预测闭环新跑档（162.48 tok/s）
+    ├── bench-c16-rerun.json       # c=16 复测（298.52 tok/s，与原始 261.41 差 14.2%）
     ├── bench-cg-c{1,4,16}.json    # graph 档原始结果（c4/c16 无 e2el 字段，见脚注 ²）
     ├── bench-cg95-c16.json        # util 0.95 + graph OOM 记录（无有效指标，仅留证）
-    ├── bench-c{1,4,8,16}.log      # 原始终端输出
-    ├── power-c{1,4,8,16}.csv      # 1 Hz 功率/显存/利用率采样（仅 eager 档）
+    ├── bench-c{1,4,8}.log         # 原始终端输出（c=16 另见 -rerun.log）
+    ├── power-c{1,4,8}.csv         # 1 Hz 功率/显存/利用率采样（c=16 另见 -rerun.csv）
     └── card.json                  # 本表所有数字的结构化副本（graph 成本=null）
 ```
 

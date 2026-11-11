@@ -49,7 +49,10 @@ KV cache 15,232 tokens、48 请求 × (input 256 / output 128)、`--ignore-eos`�
 服务重启后 KV cache = 15,232 tokens（与卡片原始三档完全一致），
 `bench_tiers.sh` 同款命令、同 seed、48 请求 ×(256/128)、enforce-eager、0.90 util。
 两次 run 的 `date` = 20261110-203430 / 20261110-203521，
-原始载体：`results/bench-c8.json`、`results/bench-c16.json` + `power-c{8,16}.csv`。
+原始载体：`results/bench-c8.json` + `power-c8.csv`（新跑）；
+c=16 复测在 `results/bench-c16-rerun.json` + `power-c16-rerun.csv`——
+**原始 261.41 的载体 `bench-c16.json` 已被保护性还原**（复测覆盖会毁掉卡片引用的原件，
+这是同一类「证据被后一次运行冲掉」的坑，第一次就踩到并当场修）。
 
 | 指标 | 预测 | 实测 | 偏差 | 判定（±15% 带） |
 |---|---|---|---|---|
