@@ -1,0 +1,55 @@
+{
+  "runs": [
+    {
+      "run": 1,
+      "duration_s": 21.08,
+      "output_tok_s": 291.4123224182011,
+      "total_tok_s": 874.2369672546033,
+      "req_s": 2.276658768892196,
+      "ttft_p99_ms": 1763.5838129650801,
+      "tpot_p99_ms": 54.886203355597715,
+      "e2e_p99_ms": 7237.181542250328,
+      "power_n": 21,
+      "clock_sm_mean": 1670.1,
+      "clock_sm_min": 1417,
+      "clock_sm_max": 2017,
+      "power_mean_w": 66.53,
+      "power_sd_w": 12.9,
+      "temp_mean_c": 64.3
+    },
+    {
+      "run": 2,
+      "duration_s": 19.29,
+      "output_tok_s": 318.4527878580038,
+      "total_tok_s": 955.3583635740113,
+      "req_s": 2.4879124051406545,
+      "ttft_p99_ms": 1575.5435386265162,
+      "tpot_p99_ms": 50.12768185231835,
+      "e2e_p99_ms": 6665.255891560228,
+      "power_n": 19,
+      "clock_sm_mean": 1742.5,
+      "clock_sm_min": 1425,
+      "clock_sm_max": 1972,
+      "power_mean_w": 75.63,
+      "power_sd_w": 7.56,
+      "temp_mean_c": 69.4
+    },
+    {
+      "run": 3,
+      "duration_s": 22.07,
+      "output_tok_s": 278.4423176107589,
+      "total_tok_s": 835.3269528322766,
+      "req_s": 2.175330606334054,
+      "ttft_p99_ms": 1556.5281730238348,
+      "tpot_p99_ms": 57.608196225606726,
+      "e2e_p99_ms": 7807.554855088238,
+      "power_n": 22,
+      "clock_sm_mean": 1634.5,
+      "clock_sm_min": 1350,
+      "clock_sm_max": 1995,
+      "power_mean_w": 65.3,
+      "power_sd_w": 12.27,
+      "temp_mean_c": 70.0
+    }
+  ]
+}
