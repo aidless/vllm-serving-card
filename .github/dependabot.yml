@@ -1,0 +1,11 @@
+# 依赖与 CI action 的自动更新（2026-11-14 补；此前只有 Renovate/无更新通道）
+# 只开 direct 依赖、每周一次、同时最多 3 个 PR，避免把仓库刷成噪音。
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"

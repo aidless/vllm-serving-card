@@ -193,7 +193,7 @@ def selftest() -> int:
     guard_all_zero_p99([nrow])
     print("[PASS] e2el 缺字段降级为 None（不猜数）")
 
-    print(f"SELFTEST PASS: 7/7 通过")
+    print("SELFTEST PASS: 7/7 通过")
     return 0
 
 
