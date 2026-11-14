@@ -1,0 +1,129 @@
+{
+ "total": 20,
+ "passed": 20,
+ "failed": 0,
+ "selftest": false,
+ "failed_by_axis": {},
+ "results": [
+  {
+   "id": "p001-parse-cost-c16",
+   "axis": "parse",
+   "ok": true,
+   "detail": "0.043"
+  },
+  {
+   "id": "p002-parse-gpumin-c1",
+   "axis": "parse",
+   "ok": true,
+   "detail": "833.9"
+  },
+  {
+   "id": "p003-parse-e2el-missing",
+   "axis": "parse",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "id": "p004-power-window-samples",
+   "axis": "power",
+   "ok": true,
+   "detail": "23"
+  },
+  {
+   "id": "p005-power-idle-c1",
+   "axis": "power",
+   "ok": true,
+   "detail": "37.37"
+  },
+  {
+   "id": "p006-power-window-vs-naive",
+   "axis": "power",
+   "ok": true,
+   "detail": "45.28 vs 67.57"
+  },
+  {
+   "id": "p007-guard-missing-required",
+   "axis": "guard",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "id": "p008-guard-non-csv-power",
+   "axis": "guard",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "id": "p009-slo-default-cap",
+   "axis": "slo",
+   "ok": true,
+   "detail": "4"
+  },
+  {
+   "id": "p010-slo-tight-threshold",
+   "axis": "slo",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "id": "p011-slo-unknown-tier",
+   "axis": "slo",
+   "ok": true,
+   "detail": "UNKNOWN"
+  },
+  {
+   "id": "p012-data-slo-json",
+   "axis": "data",
+   "ok": true,
+   "detail": "4"
+  },
+  {
+   "id": "p013-data-completed-sum",
+   "axis": "data",
+   "ok": true,
+   "detail": "144"
+  },
+  {
+   "id": "p014-data-c16-rerun-max",
+   "axis": "data",
+   "ok": true,
+   "detail": "318.45"
+  },
+  {
+   "id": "p015-doc-throughput-ratio",
+   "axis": "doc",
+   "ok": true,
+   "detail": "13.1×"
+  },
+  {
+   "id": "p016-doc-noise-floor",
+   "axis": "doc",
+   "ok": true,
+   "detail": "噪音地板"
+  },
+  {
+   "id": "p017-doc-kv-graph",
+   "axis": "doc",
+   "ok": true,
+   "detail": "8,304 tokens"
+  },
+  {
+   "id": "p018-raises-missing-key",
+   "axis": "raises",
+   "ok": true,
+   "detail": "raised KeyError"
+  },
+  {
+   "id": "p019-raises-str-latency",
+   "axis": "raises",
+   "ok": true,
+   "detail": "raised TypeError"
+  },
+  {
+   "id": "p020-raises-bad-concurrency",
+   "axis": "raises",
+   "ok": true,
+   "detail": "raised ValueError"
+  }
+ ]
+}

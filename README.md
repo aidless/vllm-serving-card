@@ -184,3 +184,46 @@ vllm-serving-card/
 ```
 
 服务日志在本机 `/tmp/vllm-serve.log`（KV cache、模型加载之类的事实来自这里）。
+
+## 验收标准与复算
+
+**判据**：本仓判为合格的条件是 `python3 eval/run_cases.py` 通过率必须为 100%（20/20），且 `make eval` 退出码必须为 0；任何一条失败即判为不合格。
+
+题库 `eval/cases.jsonl` 共 20 条，七键（id/axis/question/expected/mode/verify/source）；
+其中 17 条 `expr`/`raises` 真调 `parse_results.py` / `analyze_slo.py` 的 API、或真解析
+`results/` 落盘数据，期望值是现算的（不是抄本卡片里的数字）。
+
+| axis | 条数 | 考什么 |
+|---|---|---|
+| parse | 3 | `compute_row` 的电费/GPU·min 折算与 e2el 缺字段降级 |
+| power | 3 | `read_power` 的请求窗口切分、空闲段、朴素均值 vs 窗口均值 |
+| guard | 2 | fail-closed：缺必需字段、把非 CSV 当功率采样必须阻断 |
+| slo | 3 | `classify`/`summarize` 的档位判定与缺载体判 UNKNOWN |
+| data | 3 | `card.json` / `slo.json` / `c16-3rd-analysis.json` 的落盘数字 |
+| doc | 3 | README 与 docs 的关键结论仍可被检索到 |
+| raises | 3 | 错输入必须抛 KeyError/TypeError/ValueError，不得静默 |
+
+```bash
+python3 eval/run_cases.py             # 应 20/20
+python3 eval/run_cases.py --selftest  # 应 19/20 且退出码 0（证明这套题会红）
+python3 eval/run_cases.py --save      # 重建 eval/run-report.json
+make eval                             # 一键重跑：run_cases + parse_results --selftest
+```
+
+**复算**：每题的 `verify` 就是复算代码本身——`expr` 现算后与 `expected` 比，
+`raises` 断言异常类型，`doc` 在指定文件里搜正则。`eval/run-report.json` 记录本次
+每题 PASS/FAIL 与 `failed_by_axis`，改一行实现重跑即可重建；本卡片正文的数字
+（0.441 / 0.122 / 0.043 ¥/1M out tok、833.9 GPU·min、c=16 窗口 23 个采样、
+交互式上限 4 等）都能由这些题反向复算。
+
+**失败归因**：`run_cases.py` 不只报 `passed/total`，失败按 axis 汇总，例如：
+
+```
+失败归因（按 axis）：
+  parse: 1 条 —— p001-parse-cost-c16
+  power: 1 条 —— p004-power-window-samples
+```
+
+`parse` 红 = 折算公式或输入字段漂移；`power` 红 = 功率窗口/采样变了；
+`guard` 红 = fail-closed 分支被拆掉；`slo` 红 = 门槛或档位逻辑变了；
+`data`/`doc` 红 = 落盘证据或结论句丢失。

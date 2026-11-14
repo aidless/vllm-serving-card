@@ -4,4 +4,5 @@
 .PHONY: eval
 
 eval:
+	python3 eval/run_cases.py
 	python3 parse_results.py --selftest
